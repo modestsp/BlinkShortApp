@@ -6,18 +6,23 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using UrlShortener.Database;
 using UrlShortener.Models;
+using UrlShortener.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
-var connectionString = configuration.GetConnectionString("PostgreSQL");
+var connectionString = configuration.GetConnectionString("PostgreSQLConnection");
+
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
 // DbContext
-
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
 // Identity
 
 builder.Services.AddIdentity<User, IdentityRole>()
+// Adding suport for roles
+    .AddRoles<IdentityRole>()
+    .AddRoleManager<RoleManager<IdentityRole>>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
@@ -44,6 +49,14 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
+// Authorization
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ElevatedRights", policy =>
+        policy.RequireRole(Role.Admin));
+    options.AddPolicy("StandardRights", policy =>
+        policy.RequireRole(Role.Admin, Role.User));
+});
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -113,5 +126,13 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Adding seed
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    await SeedManager.Seed(services);
+}
 
 app.Run();

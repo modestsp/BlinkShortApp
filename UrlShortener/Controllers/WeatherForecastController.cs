@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace UrlShortener.Controllers
 {
     [ApiController]
+    [Authorize(Policy = "StandardRights")]
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
@@ -29,5 +31,13 @@ namespace UrlShortener.Controllers
             })
             .ToArray();
         }
+
+        [Authorize(Policy = "ElevatedRights")]
+        [HttpGet("GetWeatherForecastForAdminsOnly")]
+        public IActionResult GetForAdminOnly()
+        {
+            return Ok("Yeah, we have some secret weather only for admins");
+        }
     }
+
 }

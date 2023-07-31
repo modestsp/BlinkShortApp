@@ -62,9 +62,10 @@ public class AuthenticationService : IAuthenticationService
 
         var authClaims = new List<Claim>
         {
-            new(ClaimTypes.Name, user.UserName),
-            new(ClaimTypes.Email, user.Email),
+            new("username", user.UserName),
+            new("email", user.Email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new("id", user.Id)
         };
 
         var userRoles = await _userManager.GetRolesAsync(user);

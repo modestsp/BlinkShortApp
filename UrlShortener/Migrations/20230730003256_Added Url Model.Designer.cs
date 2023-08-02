@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using UrlShortener.Database;
@@ -11,9 +12,11 @@ using UrlShortener.Database;
 namespace UrlShortener.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230730003256_Added Url Model")]
+    partial class AddedUrlModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -170,12 +173,7 @@ namespace UrlShortener.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("UserId")
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Urls");
                 });
@@ -293,20 +291,6 @@ namespace UrlShortener.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("UrlShortener.Models.Url", b =>
-                {
-                    b.HasOne("UrlShortener.Models.User", "User")
-                        .WithMany("Urls")
-                        .HasForeignKey("UserId");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("UrlShortener.Models.User", b =>
-                {
-                    b.Navigation("Urls");
                 });
 #pragma warning restore 612, 618
         }

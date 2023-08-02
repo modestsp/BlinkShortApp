@@ -1,8 +1,12 @@
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UrlShortener.Database;
 using UrlShortener.Dtos;
+using UrlShortener.Extensions;
 using UrlShortener.Models;
+using UrlShortener.Services;
 
 namespace UrlShortener.Controllers;
 
@@ -10,56 +14,66 @@ namespace UrlShortener.Controllers;
 [Route("/")]
 public class UrlController : ControllerBase
 {
-    private readonly AppDbContext _context;
-    public UrlController(AppDbContext context)
+    private readonly IUrlService _urlService;
+    public UrlController(IUrlService urlService)
     {
-        _context = context;
+        _urlService = urlService;
     }
-
 
     [HttpPost("create")]
     public async Task<IActionResult> CreateUrl(CreateUrlRequest request)
     {
-        if (!Uri.TryCreate(request.Url, UriKind.Absolute, out var inputUrl))
+        var result = await _urlService.CreateUrl(request);
+        var resultDto = result.ToResultDto();
+
+        if (!resultDto.IsSuccess)
         {
-            return BadRequest("Invalid url");
+            return BadRequest(resultDto);
+        }
+        return Ok(resultDto);
+    }
+    [Authorize("StandardRights")]
+    [HttpGet("/user/{userId}")]
+    public async Task<IActionResult> GetUrls(string userId)
+    {
+        string[] authHeaderParts = HttpContext.Request.Headers.Authorization.ToString().Split(' ');
+        if (authHeaderParts.Length != 2 || !authHeaderParts[0].Equals("Bearer", StringComparison.OrdinalIgnoreCase))
+        {
+            return Unauthorized();
+        }
+        var jwt = authHeaderParts[1];
+        var handler = new JwtSecurityTokenHandler();
+        var decodedToken = handler.ReadJwtToken(jwt);
+        var userIdFromToken = decodedToken.Claims.FirstOrDefault(c => c.Type == "id")?.Value;
+
+        if (userIdFromToken == null || userIdFromToken.ToString() != userId)
+        {
+            return Unauthorized();
         }
 
-        var random = new Random();
+        var result = await _urlService.GetUrlsFromUser(userId);
+        var resultDto = result.ToResultDto();
 
-        const string chars = "ABCDEFGHIJKLMNQPRTSUVWZ1234567890ab@";
-
-        var randomStr = new string(Enumerable.Repeat(chars, 8)
-            .Select(x => x[random.Next(x.Length)]).ToArray());
-
-        var sUrl = new Url()
+        if (!resultDto.IsSuccess)
         {
-            OriginalUrl = request.Url,
-            ShortUrl = randomStr
-        };
+            return BadRequest(resultDto);
+        }
 
-        await _context.Urls.AddAsync(sUrl);
-        await _context.SaveChangesAsync();
+        return Ok(resultDto);
 
-        var response = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}/{sUrl.ShortUrl}";
-
-        return Ok(new CreateUrlResponse()
-        {
-            ShortUrl = response
-        });
     }
     [HttpGet("/{shortUrl}")]
     public async Task<IActionResult> RedirectToUrl()
     {
-        var path = HttpContext.Request.Path.ToUriComponent().Trim('/');
-        var urlMatch = await _context.Urls.FirstOrDefaultAsync(
-            x => x.ShortUrl.Trim() == path.Trim()
-        );
+        var result = await _urlService.RedirectToUrl();
+        var resultDto = result.ToResultDto();
 
-        if (urlMatch == null)
-            return BadRequest("Invalid url");
+        if (!resultDto.IsSuccess)
+        {
+            return BadRequest(resultDto);
+        };
 
-        return Redirect(urlMatch.OriginalUrl);
+        return Redirect(resultDto.Response);
     }
 }
 

@@ -14,7 +14,7 @@ var connectionString = configuration.GetConnectionString("PostgreSQLConnection")
 
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IUrlService, UrlService>();
-
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 // DbContext
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 

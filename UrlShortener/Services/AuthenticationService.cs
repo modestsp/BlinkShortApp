@@ -13,12 +13,15 @@ public class AuthenticationService : IAuthenticationService
 {
     private readonly UserManager<User> _userManager;
     private readonly IConfiguration _configuration;
+    private readonly IHttpContextAccessor _ctxAccessor;
 
     public AuthenticationService(UserManager<User> userManager,
-    IConfiguration configuration)
+    IConfiguration configuration,
+    IHttpContextAccessor ctxAccessor)
     {
         _userManager = userManager;
         _configuration = configuration;
+        _ctxAccessor = ctxAccessor;
     }
 
     public async Task<Result<string>> Register(RegisterRequest request)
@@ -77,6 +80,25 @@ public class AuthenticationService : IAuthenticationService
         return Result.Ok(new JwtSecurityTokenHandler().WriteToken(token));
     }
 
+    public bool VerifyJwt(string userId)
+    {
+        var token = _ctxAccessor.HttpContext.Request.Headers.Authorization;
+        string[] authHeaderParts = token.ToString().Split(' ');
+        if (authHeaderParts.Length != 2 || !authHeaderParts[0].Equals("Bearer", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+        var jwt = authHeaderParts[1];
+        var handler = new JwtSecurityTokenHandler();
+        var decodedJwt = handler.ReadJwtToken(jwt);
+        var userIdFromJwt = decodedJwt.Claims.FirstOrDefault(c => c.Type == "id")?.Value;
+
+        if (userIdFromJwt == null || userIdFromJwt.ToString() != userId)
+        {
+            return false;
+        }
+        return true;
+    }
     private JwtSecurityToken GetToken(IEnumerable<Claim> authClaims)
     {
         var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
@@ -90,7 +112,6 @@ public class AuthenticationService : IAuthenticationService
 
         return token;
     }
-
     private string GetErrorsText(IEnumerable<IdentityError> errors)
     {
         return string.Join(", ", errors.Select(error => error.Description).ToArray());

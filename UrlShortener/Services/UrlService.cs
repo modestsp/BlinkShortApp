@@ -28,9 +28,9 @@ public class UrlService : IUrlService
         var random = new Random();
         var randomStr = new string(Enumerable.Repeat(AllowedChars, 8)
                     .Select(x => x[random.Next(x.Length)]).ToArray());
-        // Check if user in request
+
         var user = await _db.Users.FirstOrDefaultAsync(user => user.Id == request.UserId);
-        // If User, create the url and add it to user
+
         var sUrl = new Url()
         {
             OriginalUrl = request.Url,
@@ -50,16 +50,20 @@ public class UrlService : IUrlService
             CreatedAt = sUrl.CreatedAt
         });
 
-        // if (!user == null)
-        // {
-        //     return
-        // }
-        // If not create url
     }
 
-    public async Task<Result<List<Url>>> GetUrlsFromUser(string userId)
+    public async Task<Result<List<GetUrlResponse>>> GetUrlsFromUser(string userId)
     {
-        var urls = await _db.Urls.Where(url => url.UserId == userId).ToListAsync();
+        var urls = await _db.Urls
+            .Where(url => url.UserId == userId)
+            .Select(url => new GetUrlResponse()
+            {
+                Id = url.Id,
+                ShortUrl = url.ShortUrl,
+                OriginalUrl = url.OriginalUrl,
+                CreatedAt = url.CreatedAt
+            })
+            .ToListAsync();
         if (urls == null)
         {
             return Result.Fail("User not found");

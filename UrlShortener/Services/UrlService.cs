@@ -45,7 +45,9 @@ public class UrlService : IUrlService
 
         return Result.Ok(new CreateUrlResponse()
         {
-            ShortUrl = result
+            ShortUrl = result,
+            Id = sUrl.Id,
+            CreatedAt = sUrl.CreatedAt
         });
 
         // if (!user == null)
@@ -76,5 +78,17 @@ public class UrlService : IUrlService
             return Result.Fail("Invalid url");
 
         return Result.Ok(urlMatch.OriginalUrl);
+    }
+
+    public async Task<Result<string>> DeleteUrl(string urlId)
+    {
+        var urlToDelete = await _db.Urls.FirstOrDefaultAsync(url =>
+        url.Id.ToString() == urlId);
+        if (urlToDelete == null)
+        {
+            return Result.Fail("The url does not exists");
+        }
+        _db.Urls.Remove(urlToDelete);
+        return await _db.SaveChangesAsync() > 0 ? Result.Ok("Deleted Succesfully") : Result.Fail("Something went wrong while processing the request");
     }
 }

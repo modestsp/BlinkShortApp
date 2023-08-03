@@ -15,9 +15,11 @@ namespace UrlShortener.Controllers;
 public class UrlController : ControllerBase
 {
     private readonly IUrlService _urlService;
-    public UrlController(IUrlService urlService)
+    private readonly IAuthenticationService _authService;
+    public UrlController(IUrlService urlService, IAuthenticationService authService)
     {
         _urlService = urlService;
+        _authService = authService;
     }
 
     [HttpPost("create")]
@@ -36,20 +38,10 @@ public class UrlController : ControllerBase
     [HttpGet("/user/{userId}")]
     public async Task<IActionResult> GetUrls(string userId)
     {
-        string[] authHeaderParts = HttpContext.Request.Headers.Authorization.ToString().Split(' ');
-        if (authHeaderParts.Length != 2 || !authHeaderParts[0].Equals("Bearer", StringComparison.OrdinalIgnoreCase))
-        {
-            return Unauthorized();
-        }
-        var jwt = authHeaderParts[1];
-        var handler = new JwtSecurityTokenHandler();
-        var decodedToken = handler.ReadJwtToken(jwt);
-        var userIdFromToken = decodedToken.Claims.FirstOrDefault(c => c.Type == "id")?.Value;
+        var checkJwt = _authService.VerifyJwt(userId);
 
-        if (userIdFromToken == null || userIdFromToken.ToString() != userId)
-        {
+        if (!checkJwt)
             return Unauthorized();
-        }
 
         var result = await _urlService.GetUrlsFromUser(userId);
         var resultDto = result.ToResultDto();
@@ -74,6 +66,23 @@ public class UrlController : ControllerBase
         };
 
         return Redirect(resultDto.Response);
+    }
+    [HttpDelete("/{userId}/{urlId}")]
+    public async Task<IActionResult> DeleteUrl(string urlId, string userId)
+    {
+        var checkJwt = _authService.VerifyJwt(userId);
+        if (!checkJwt)
+            return Unauthorized();
+
+        var result = await _urlService.DeleteUrl(urlId);
+        var resultDto = result.ToResultDto();
+
+        if (!resultDto.IsSuccess)
+        {
+            return BadRequest(resultDto.Errors);
+        }
+
+        return Ok(resultDto);
     }
 }
 

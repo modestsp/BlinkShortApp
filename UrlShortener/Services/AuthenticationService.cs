@@ -73,7 +73,7 @@ public class AuthenticationService : IAuthenticationService
 
         var userRoles = await _userManager.GetRolesAsync(user);
 
-        authClaims.AddRange(userRoles.Select(userRole => new Claim(ClaimTypes.Role, userRole)));
+        authClaims.AddRange(userRoles.Select(userRole => new Claim("role", userRole)));
 
         var token = GetToken(authClaims);
 

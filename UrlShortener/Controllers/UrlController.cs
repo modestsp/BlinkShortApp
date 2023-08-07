@@ -25,6 +25,12 @@ public class UrlController : ControllerBase
     [HttpPost("create")]
     public async Task<IActionResult> CreateUrl(CreateUrlRequest request)
     {
+        if (request.UserId != null)
+        {
+            var checkJwt = _authService.VerifyJwt(request.UserId);
+            if (!checkJwt)
+                return Unauthorized();
+        }
         var result = await _urlService.CreateUrl(request);
         var resultDto = result.ToResultDto();
 

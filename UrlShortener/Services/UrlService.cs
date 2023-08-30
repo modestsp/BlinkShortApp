@@ -93,6 +93,6 @@ public class UrlService : IUrlService
             return Result.Fail("The url does not exists");
         }
         _db.Urls.Remove(urlToDelete);
-        return await _db.SaveChangesAsync() > 0 ? Result.Ok("Deleted Succesfully") : Result.Fail("Something went wrong while processing the request");
+        return await _db.SaveChangesAsync() > 0 ? Result.Ok("Deleted Successfully") : Result.Fail("Something went wrong while processing the request");
     }
 }

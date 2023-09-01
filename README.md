@@ -1,2 +1,2 @@
 # BlinkShortApp
-Check the client: https://github.com/modestsp/BlinkShortClient
+Check client repository: https://github.com/modestsp/BlinkShortClient

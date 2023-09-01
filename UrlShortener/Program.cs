@@ -10,7 +10,7 @@ using UrlShortener.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
-var connectionString = configuration.GetConnectionString("PostgreSQLConnection");
+var connectionString = Environment.GetEnvironmentVariable("Connection");
 
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IUrlService, UrlService>();
@@ -44,9 +44,9 @@ builder.Services.AddAuthentication(options =>
         {
             ValidateIssuer = true,
             ValidateAudience = true,
-            ValidAudience = configuration["JWT:ValidAudience"],
-            ValidIssuer = configuration["JWT:ValidIssuer"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Secret"]))
+            ValidAudience = Environment.GetEnvironmentVariable("ValidAudience"),
+            ValidIssuer = Environment.GetEnvironmentVariable("ValidIssuer"),
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("Secret")))
         };
     });
 

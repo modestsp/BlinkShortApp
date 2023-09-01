@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace UrlShortener.Controllers
 {
     [ApiController]
-    [Authorize(Policy = "StandardRights")]
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {

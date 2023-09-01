@@ -105,7 +105,7 @@ builder.Services.AddCors(options =>
         b =>
         {
             b
-                .WithOrigins("http://localhost:5173")
+                .WithOrigins("https://blinkshrt.vercel.app")
                 .AllowAnyHeader()
                 .AllowAnyMethod();
         });
